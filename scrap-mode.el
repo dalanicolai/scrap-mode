@@ -92,6 +92,18 @@
          (next (nth (+ current (if previous (- n) n)) scrap-overlays)))
     (goto-char (overlay-start next))))
 
+(defun scrap-previous (n &optional previous)
+  (interactive "p")
+  (scrap-next n t))
+
+(defun scrap-next-line (n &optional previous)
+  (interactive "p")
+  (scrap-next (* n scrap-columns)))
+
+(defun scrap-previous-line (n &optional previous)
+  (interactive "p")
+  (scrap-next (* n scrap-columns) t))
+
 
 (provide 'image-scroll-mode)
 ;;; image-scroll-mode.el ends here
