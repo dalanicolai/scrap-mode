@@ -25,6 +25,9 @@
 ;;; Code:
 (defvar scrap-incompatible-modes '(global-hl-line-mode))
 
+(defvar-local scrap-overlays nil)
+(defvar-local scrap-columns nil)
+
 (defun scrap-get-overlay-n ()
   (overlay-get (car (overlays-at (point))) 'n))
 
@@ -35,7 +38,7 @@
                                             (string= (file-name-extension name) "pdf"))))))
   (pop-to-buffer (get-buffer-create file-name))
   (setq buffer-file-name file-name)
-  (scrap-create-overlays 10 '(100 . 140) 2 nil nil
+  (scrap-create-overlays 10 '(400 . 560) 2 nil nil
                          'face `(:background "gray")))
 (defun scrap-images (dir)
   (interactive
@@ -53,14 +56,14 @@
 							  :max-width max-w)))
 		    images)))
 
-(defvar-local scrap-overlays nil)
 
 (defun scrap-create-overlays (number
                               ;; size
                               &optional columns no-hspace no-vspace
                               &rest overlay-props)
-  ;; (dolist (m scrap-incompatible-modes)
-  ;;   (funcall m -1))
+  (dolist (m scrap-incompatible-modes)
+    (funcall m -1))
+  (setq scrap-columns columns)
   (let (overlays)
     (dotimes (i number)
       (let* ((n (1+ i))
