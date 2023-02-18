@@ -23,6 +23,8 @@
 ;;
 
 ;;; Code:
+(defvar scrap-incompatible-modes '(global-hl-line-mode))
+
 (defun scrap-get-overlay-n ()
   (overlay-get (car (overlays-at (point))) 'n))
 
@@ -35,13 +37,30 @@
   (setq buffer-file-name file-name)
   (scrap-create-overlays 10 '(100 . 140) 2 nil nil
                          'face `(:background "gray")))
+(defun scrap-images (dir)
+  (interactive
+   (list (read-file-name "Select document: " nil nil t nil #'file-directory-p)))
+  (pop-to-buffer (get-buffer-create dir))
+  (setq buffer-file-name dir)
+  (let ((images (seq-filter #'image-supported-file-p (directory-files dir)))
+	(max-w 150)
+	;; (max-h 200)
+	)
+    (scrap-create-overlays (length images) 5)
+    (seq-do-indexed (lambda (im n)
+		      (overlay-put (nth n scrap-overlays)
+				   'display (create-image (concat (file-name-as-directory dir) im) nil nil
+							  :max-width max-w)))
+		    images)))
 
 (defvar-local scrap-overlays nil)
 
 (defun scrap-create-overlays (number
-                              size
+                              ;; size
                               &optional columns no-hspace no-vspace
                               &rest overlay-props)
+  ;; (dolist (m scrap-incompatible-modes)
+  ;;   (funcall m -1))
   (let (overlays)
     (dotimes (i number)
       (let* ((n (1+ i))
@@ -51,18 +70,20 @@
                  (point)
                  (progn (insert " ") (point))
                  (unless no-hspace (insert " "))))
-             (w (car size))
-             (h (cdr size)))
+             ;; (w (car size))
+             ;; (h (cdr size))
+	     )
         (when (and (= (% n (or columns 1)) 0)
                    (not (= n number)))
           (insert "\n")
           (unless no-vspace (insert "\n")))
         (overlay-put o 'n n)
-        (overlay-put o 'display `(space . (:width (,w) :height (,h))))
+        ;; (overlay-put o 'display `(space . (:width (,w) :height (,h))))
         (dotimes (j (/ (length overlay-props) 2))
           (let ((m (* j 2)))
             (overlay-put o (nth m overlay-props) (nth (+ m 1) overlay-props))))
         (push o overlays)))
+    (goto-char (point-min))
     (setq scrap-overlays (nreverse overlays))))
 
 (defun scrap-next (n &optional previous)
