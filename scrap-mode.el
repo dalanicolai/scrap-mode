@@ -23,24 +23,20 @@
 ;;
 
 ;;; Code:
-(defvar scrap-incompatible-modes '(global-hl-line-mode))
+(defvar scrap-incompatible-modes '(visual-line-mode
+                                   global-hl-line-mode))
 
 (defvar-local scrap-overlays nil)
 (defvar-local scrap-columns nil)
+(defvar-local scrap-next-function #'scrap-next)
 
-(defun scrap-get-overlay-n ()
-  (overlay-get (car (overlays-at (point))) 'n))
+(defsubst scrap-current-overlay ()
+  (car (overlays-at (point))))
 
-(defun doc-find-file (file-name)
-  (interactive
-   (list (read-file-name "Select document: " nil nil t nil
-                         (lambda (name) (or (file-directory-p name)
-                                            (string= (file-name-extension name) "pdf"))))))
-  (pop-to-buffer (get-buffer-create file-name))
-  (setq buffer-file-name file-name)
-  (scrap-create-overlays 10 '(400 . 560) 2 nil nil
-                         'face `(:background "gray")))
-(defun scrap-images (dir)
+(defsubst scrap-get-overlay-n ()
+  (overlay-get (scrap-current-overlay) 'n))
+
+(defun scrap-dir-images (dir)
   (interactive
    (list (read-file-name "Select document: " nil nil t nil #'file-directory-p)))
   (pop-to-buffer (get-buffer-create dir))
@@ -88,26 +84,36 @@
             (overlay-put o (nth m overlay-props) (nth (+ m 1) overlay-props))))
         (push o overlays)))
     (goto-char (point-min))
-    (setq scrap-overlays (nreverse overlays))))
+    (setq scrap-overlays (nreverse overlays))
+    (scrap-mode)))
 
 (defun scrap-next (n &optional previous)
-  (interactive "p")
   (let* ((current (1- (scrap-get-overlay-n)))
          (next (nth (+ current (if previous (- n) n)) scrap-overlays)))
     (goto-char (overlay-start next))))
 
-(defun scrap-previous (n &optional previous)
+(defun scrap-scroll-next (n)
   (interactive "p")
-  (scrap-next n t))
+  (funcall scrap-next-function n))
 
-(defun scrap-next-line (n &optional previous)
+(defun scrap-scroll-previous (n)
   (interactive "p")
-  (scrap-next (* n scrap-columns)))
+  (funcall scrap-next-function n t))
 
-(defun scrap-previous-line (n &optional previous)
+(defun scrap-scroll-next-line (n)
   (interactive "p")
-  (scrap-next (* n scrap-columns) t))
+  (funcall scrap-next-function (* n scrap-columns)))
 
+(defun scrap-scroll-previous-line (n)
+  (interactive "p")
+  (funcall scrap-next-function (* n scrap-columns) t))
+
+(define-minor-mode scrap-mode "Display images in a grid."
+  :lighter "Scrap"
+  :keymap `((,(kbd "C-n") . scrap-scroll-next)
+            (,(kbd "C-p") . scrap-scroll-previous)
+            (,(kbd "C-f") . scrap-scroll-next-line)
+            (,(kbd "C-b") . scrap-scroll-previous-line)))
 
 (provide 'image-scroll-mode)
 ;;; image-scroll-mode.el ends here
