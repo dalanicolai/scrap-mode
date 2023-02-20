@@ -63,6 +63,7 @@
                               &rest overlay-props)
   (dolist (m scrap-incompatible-modes)
     (funcall m -1))
+  (toggle-truncate-lines 1) ; also disables visual-mode
   (setq scrap-columns columns)
   (let (overlays)
     (dotimes (i number)
